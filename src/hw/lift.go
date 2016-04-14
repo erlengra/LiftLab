@@ -1,9 +1,3 @@
-// Package hw defines interactions with the lift hardware at the real time
-// lab at The Department of Engineering Cybernetics at NTNU, Trondheim,
-// Norway.
-//
-// This file is a golang port of elev.c from the hand out driver
-// (https://github.com/TTK4145/Project)
 package hw
 
 import (
@@ -12,33 +6,29 @@ import (
 	"log"
 )
 
-var lampChannelMatrix = [def.NumFloors][def.NumButtons]int{
+var lampChannelMatrix = [def.N_Floors][def.N_Buttons]int{
 	{LIGHT_UP1, LIGHT_DOWN1, LIGHT_COMMAND1},
 	{LIGHT_UP2, LIGHT_DOWN2, LIGHT_COMMAND2},
 	{LIGHT_UP3, LIGHT_DOWN3, LIGHT_COMMAND3},
 	{LIGHT_UP4, LIGHT_DOWN4, LIGHT_COMMAND4},
 }
-var buttonChannelMatrix = [def.NumFloors][def.NumButtons]int{
+var buttonChannelMatrix = [def.N_Floors][def.N_Buttons]int{
 	{BUTTON_UP1, BUTTON_DOWN1, BUTTON_COMMAND1},
 	{BUTTON_UP2, BUTTON_DOWN2, BUTTON_COMMAND2},
 	{BUTTON_UP3, BUTTON_DOWN3, BUTTON_COMMAND3},
 	{BUTTON_UP4, BUTTON_DOWN4, BUTTON_COMMAND4},
 }
 
-// Init initialises the lift hardware and moves the lift to a defined state.
-// (Descending until it reaches a floor.)
 func Init() (int, error) {
-	// Init hardware
 	if !ioInit() {
 		return -1, errors.New("Hardware driver: ioInit() failed!")
 	}
 
-	// Zero all floor button lamps
-	for f := 0; f < def.NumFloors; f++ {
+	for f := 0; f < def.N_Floors; f++ {
 		if f != 0 {
 			SetButtonLamp(f, def.BtnDown, false)
 		}
-		if f != def.NumFloors-1 {
+		if f != def.N_Floors-1 {
 			SetButtonLamp(f, def.BtnUp, false)
 		}
 		SetButtonLamp(f, def.BtnInside, false)
@@ -47,7 +37,6 @@ func Init() (int, error) {
 	SetStopLamp(false)
 	SetDoorLamp(false)
 
-	// Move to defined state
 	SetMotorDir(def.DirDown)
 	floor := Floor()
 	for floor == -1 {
@@ -95,13 +84,12 @@ func Floor() int {
 }
 
 func SetFloorLamp(floor int) {
-	if floor < 0 || floor >= def.NumFloors {
+	if floor < 0 || floor >= def.N_Floors {
 		log.Printf("Error: Floor %d out of range!\n", floor)
 		log.Println("No floor indicator will be set.")
 		return
 	}
 
-	// Binary encoding. One light must always be on.
 	if floor&0x02 > 0 {
 		ioSetBit(LIGHT_FLOOR_IND1)
 	} else {
@@ -116,15 +104,15 @@ func SetFloorLamp(floor int) {
 }
 
 func ReadButton(floor int, button int) bool {
-	if floor < 0 || floor >= def.NumFloors {
+	if floor < 0 || floor >= def.N_Floors {
 		log.Printf("Error: Floor %d out of range!\n", floor)
 		return false
 	}
-	if button < 0 || button >= def.NumButtons {
+	if button < 0 || button >= def.N_Buttons {
 		log.Printf("Error: Button %d out of range!\n", button)
 		return false
 	}
-	if button == def.BtnUp && floor == def.NumFloors-1 {
+	if button == def.BtnUp && floor == def.N_Floors-1 {
 		log.Println("Button up from top floor does not exist!")
 		return false
 	}
@@ -141,11 +129,11 @@ func ReadButton(floor int, button int) bool {
 }
 
 func SetButtonLamp(floor int, button int, value bool) {
-	if floor < 0 || floor >= def.NumFloors {
+	if floor < 0 || floor >= def.N_Floors {
 		log.Printf("Error: Floor %d out of range!\n", floor)
 		return
 	}
-	if button == def.BtnUp && floor == def.NumFloors-1 {
+	if button == def.BtnUp && floor == def.N_Floors-1 {
 		log.Println("Button up from top floor does not exist!")
 		return
 	}
