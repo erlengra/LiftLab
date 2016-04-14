@@ -5,8 +5,8 @@ import (
 )
 
 // Global system constants
-const NumButtons = 3
-const NumFloors = 4
+const N_Buttons = 3
+const N_Floors = 4
 
 const (
 	BtnUp int = iota

@@ -5,29 +5,21 @@ import (
 	"log"
 )
 
-// CalculateCost returns how much effort it is for this lift to carry out
-// the given order. Each sheduled stop and each travel between adjacent
-// floors on the way towards target will add cost 2. Cost 1 is added if the
-// lift starts between floors.
 func CalculateCost(targetFloor, targetButton, prevFloor, currFloor, currDir int) int {
 	q := local.deepCopy()
-	q.setOrder(targetFloor, def.BtnInside, orderStatus{true, "", nil})
+	q.setOrder(targetFloor, def.BtnInside, Status{true, "", nil})
 
 	cost := 0
 	floor := prevFloor
 	dir := currDir
 
 	if currFloor == -1 {
-		// Between floors, add 1 cost.
 		cost++
 	} else if dir != def.DirStop {
-		// At floor, but moving, add 2 cost.
 		cost += 2
 	}
 	floor, dir = incrementFloor(floor, dir)
 
-	// Simulate how the lift will move, and accumulate cost until it 'reaches' target.
-	// Break after 10 iterations to assure against a stuck loop.
 	for n := 0; !(floor == targetFloor && q.shouldStop(floor, dir)) && n < 10; n++ {
 		if q.shouldStop(floor, dir) {
 			cost += 2
@@ -60,9 +52,9 @@ func incrementFloor(floor, dir int) (int, int) {
 		dir = def.DirUp
 		floor = 0
 	}
-	if floor >= def.NumFloors-1 && dir == def.DirUp {
+	if floor >= def.N_Floors-1 && dir == def.DirUp {
 		dir = def.DirDown
-		floor = def.NumFloors - 1
+		floor = def.N_Floors - 1
 	}
 	return floor, dir
 }

@@ -21,8 +21,8 @@ func (q *queue) stopTimer(floor, button int) {
 }
 
 func (q *queue) isEmpty() bool {
-	for f := 0; f < def.NumFloors; f++ {
-		for b := 0; b < def.NumButtons; b++ {
+	for f := 0; f < def.N_Floors; f++ {
+		for b := 0; b < def.N_Buttons; b++ {
 			if q.matrix[f][b].active {
 				return false
 			}
@@ -31,8 +31,7 @@ func (q *queue) isEmpty() bool {
 	return true
 }
 
-func (q *queue) setOrder(floor, button int, status orderStatus) {
-	// Ignore if order to be set is equal to order already in queue.
+func (q *queue) setOrder(floor, button int, status Status) {
 	if q.isOrder(floor, button) == status.active {
 		return
 	}
@@ -47,8 +46,8 @@ func (q *queue) isOrder(floor, button int) bool {
 }
 
 func (q *queue) isOrdersAbove(floor int) bool {
-	for f := floor + 1; f < def.NumFloors; f++ {
-		for b := 0; b < def.NumButtons; b++ {
+	for f := floor + 1; f < def.N_Floors; f++ {
+		for b := 0; b < def.N_Buttons; b++ {
 			if q.isOrder(f, b) {
 				return true
 			}
@@ -59,7 +58,7 @@ func (q *queue) isOrdersAbove(floor int) bool {
 
 func (q *queue) isOrdersBelow(floor int) bool {
 	for f := 0; f < floor; f++ {
-		for b := 0; b < def.NumButtons; b++ {
+		for b := 0; b < def.N_Buttons; b++ {
 			if q.isOrder(f, b) {
 				return true
 			}
@@ -80,7 +79,7 @@ func (q *queue) chooseDirection(floor, dir int) int {
 			return def.DirUp
 		}
 	case def.DirUp:
-		if q.isOrdersAbove(floor) && floor < def.NumFloors-1 {
+		if q.isOrdersAbove(floor) && floor < def.N_Floors-1 {
 			return def.DirUp
 		} else {
 			return def.DirDown
@@ -111,7 +110,7 @@ func (q *queue) shouldStop(floor, dir int) bool {
 	case def.DirUp:
 		return q.isOrder(floor, def.BtnUp) ||
 			q.isOrder(floor, def.BtnInside) ||
-			floor == def.NumFloors-1 ||
+			floor == def.N_Floors-1 ||
 			!q.isOrdersAbove(floor)
 	case def.DirStop:
 		return q.isOrder(floor, def.BtnDown) ||
@@ -127,8 +126,8 @@ func (q *queue) shouldStop(floor, dir int) bool {
 
 func (q *queue) deepCopy() *queue {
 	queueCopy := new(queue)
-	for f := 0; f < def.NumFloors; f++ {
-		for b := 0; b < def.NumButtons; b++ {
+	for f := 0; f < def.N_Floors; f++ {
+		for b := 0; b < def.N_Buttons; b++ {
 			queueCopy.matrix[f][b] = q.matrix[f][b]
 		}
 	}

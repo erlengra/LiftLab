@@ -8,20 +8,15 @@ import (
 	"os"
 )
 
-// runBackup loads queue data from file if file exists once, and saves
-// backups whenever its asked to. If it finds a non-empty backed up queue,
-// its internal order are added to the local queue, and its external orders
-// are reassigned by sending as new orders on the network.
 func runBackup(outgoingMsg chan<- def.Message) {
 	const filename = "lift_backup"
 
 	var backup queue
 	backup.loadFromDisk(filename)
 
-	// Resend all orders found on loaded backup file:
 	if !backup.isEmpty() {
-		for f := 0; f < def.NumFloors; f++ {
-			for b := 0; b < def.NumButtons; b++ {
+		for f := 0; f < def.N_Floors; f++ {
+			for b := 0; b < def.N_Buttons; b++ {
 				if backup.isOrder(f, b) {
 					if b == def.BtnInside {
 						AddLocalOrder(f, b)
