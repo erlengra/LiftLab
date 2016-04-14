@@ -132,7 +132,6 @@ func pollFloors() <-chan int {
 	return c
 }
 
-// handleMessage handles incoming messages from the network.
 func handleMessage(msg def.Message) {
 	const aliveTimeout = 2 * time.Second
 

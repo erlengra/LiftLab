@@ -19,7 +19,7 @@ func runBackup(outgoingMsg chan<- def.Message) {
 			for b := 0; b < def.N_Buttons; b++ {
 				if backup.isOrder(f, b) {
 					if b == def.BtnInside {
-						AddLocalOrder(f, b)
+						SetOrderLocal(f, b)
 					} else {
 						outgoingMsg <- def.Message{Category: def.NewOrder, Floor: f, Button: b}
 					}
@@ -37,7 +37,6 @@ func runBackup(outgoingMsg chan<- def.Message) {
 	}()
 }
 
-// saveToDisk saves a queue to disk.
 func (q *queue) saveToDisk(filename string) error {
 
 	data, err := json.Marshal(&q)
@@ -52,8 +51,6 @@ func (q *queue) saveToDisk(filename string) error {
 	return nil
 }
 
-// loadFromDisk checks if a file of the given name is available on disk, and
-// saves its contents to a queue if the file is present.
 func (q *queue) loadFromDisk(filename string) error {
 	if _, err := os.Stat(filename); err == nil {
 		log.Println(def.ColG, "Backup file found, processing...", def.ColN)
