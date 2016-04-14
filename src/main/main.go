@@ -90,13 +90,13 @@ func eventHandler(ch fsm.Channels) {
 func pollButtons() <-chan def.Keypress {
 	c := make(chan def.Keypress)
 	go func() {
-		var buttonState [def.NumFloors][def.NumButtons]bool
+		var buttonState [def.N_Floors][def.N_Buttons]bool
 
 		for {
-			for f := 0; f < def.NumFloors; f++ {
-				for b := 0; b < def.NumButtons; b++ {
+			for f := 0; f < def.N_Floors; f++ {
+				for b := 0; b < def.N_Buttons; b++ {
 					if (f == 0 && b == def.BtnDown) ||
-						(f == def.NumFloors-1 && b == def.BtnUp) {
+						(f == def.N_Floors-1 && b == def.BtnUp) {
 						continue
 					}
 					if hw.ReadButton(f, b) {
@@ -157,8 +157,6 @@ func handleMessage(msg def.Message) {
 	}
 }
 
-// handleDeadLift removes a dead lift from the list of online lifts, and
-// reassigns any orderes assigned to it.
 func handleDeadLift(deadAddr string) {
 	log.Printf("%sConnection to IP %s is dead!%s", def.ColR, deadAddr[0:15], def.ColN)
 	delete(onlineLifts, deadAddr)
@@ -166,13 +164,11 @@ func handleDeadLift(deadAddr string) {
 	queue.ReassignOrders(deadAddr, outgoingMsg)
 }
 
-// connectionTimer finds out when any lifts are lost from the network.
 func connectionTimer(connection *network.UdpConnection) {
 	<-connection.Timer.C
 	deadChan <- *connection
 }
 
-// safeKill turns the motor off if the program is killed with CTRL+C.
 func safeKill() {
 	var c = make(chan os.Signal)
 	signal.Notify(c, os.Interrupt)
@@ -181,13 +177,12 @@ func safeKill() {
 	log.Fatal(def.ColR, "User terminated program.", def.ColN)
 }
 
-// syncLights checks the queues and updates all order lamps accordingly.
 func syncLights() {
 	for {
 		<-def.SyncLightsChan
-		for f := 0; f < def.NumFloors; f++ {
-			for b := 0; b < def.NumButtons; b++ {
-				if (b == def.BtnUp && f == def.NumFloors-1) || (b == def.BtnDown && f == 0) {
+		for f := 0; f < def.N_Floors; f++ {
+			for b := 0; b < def.N_Buttons; b++ {
+				if (b == def.BtnUp && f == def.N_Floors-1) || (b == def.BtnDown && f == 0) {
 					continue
 				} else {
 					switch b {
