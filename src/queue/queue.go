@@ -8,7 +8,7 @@ import (
 )
 
 type queue struct {
-	matrix [def.N_Floors][def.N_Buttons]Status
+	queue_table [def.N_Floors][def.N_Buttons]Status
 }
 
 type Status struct {
@@ -19,46 +19,46 @@ type Status struct {
 
 var inactive = Status{active: false, addr: "", timer: nil}
 var local queue
-var remote queue
+var main queue
 var updateLocal = make(chan bool)
 var takeBackup = make(chan bool, 10)
 var OrderTimeoutChan = make(chan def.Keypress)
 var newOrder chan bool
 
-func Init(newOrderTemp chan bool, outgoingMsg chan def.Message) {
+func Initialize(newOrderTemp chan bool, outgoingMsg chan def.Message) {
 	newOrder = newOrderTemp
 	go updateLocalQueue()
 	runBackup(outgoingMsg)
 	log.Println(def.ColG, "Queue initialised.", def.ColN)
 }
 
-func AddLocalOrder(floor int, button int) {
+func SetOrderLocal(floor int, button int) {
 	local.setOrder(floor, button, Status{true, "", nil})
 	newOrder <- true
 }
 
 func AddRemoteOrder(floor, button int, addr string) {
 	alreadyExist := IsRemoteOrder(floor, button)
-	remote.setOrder(floor, button, Status{true, addr, nil})
+	main.setOrder(floor, button, Status{true, addr, nil})
 	if !alreadyExist {
-		go remote.startTimer(floor, button)
+		go main.startTimer(floor, button)
 	}
 	updateLocal <- true
 }
 
 func RemoveRemoteOrdersAt(floor int) {
 	for b := 0; b < def.N_Buttons; b++ {
-		remote.stopTimer(floor, b)
-		remote.setOrder(floor, b, inactive)
+		main.stopTimer(floor, b)
+		main.setOrder(floor, b, inactive)
 	}
 	updateLocal <- true
 }
 
 func RemoveOrdersAt(floor int, outgoingMsg chan<- def.Message) {
 	for b := 0; b < def.N_Buttons; b++ {
-		remote.stopTimer(floor, b)
+		main.stopTimer(floor, b)
 		local.setOrder(floor, b, inactive)
-		remote.setOrder(floor, b, inactive)
+		main.setOrder(floor, b, inactive)
 	}
 	outgoingMsg <- def.Message{Category: def.CompleteOrder, Floor: floor}
 }
@@ -76,14 +76,14 @@ func IsLocalOrder(floor, button int) bool {
 }
 
 func IsRemoteOrder(floor, button int) bool {
-	return remote.isOrder(floor, button)
+	return main.isOrder(floor, button)
 }
 
 func ReassignOrders(deadAddr string, outgoingMsg chan<- def.Message) {
 	for f := 0; f < def.N_Floors; f++ {
 		for b := 0; b < def.N_Buttons; b++ {
-			if remote.matrix[f][b].addr == deadAddr {
-				remote.setOrder(f, b, inactive)
+			if main.queue_table[f][b].addr == deadAddr {
+				main.setOrder(f, b, inactive)
 				outgoingMsg <- def.Message{Category: def.NewOrder, Floor: f, Button: b}
 			}
 		}
@@ -114,15 +114,15 @@ func printQueues() {
 		}
 
 		s2 := "   "
-		if remote.isOrder(f, def.BtnUp) {
+		if main.isOrder(f, def.BtnUp) {
 			fmt.Printf("↑")
-			s2 += "(↑ " + remote.matrix[f][def.BtnUp].addr[12:15] + ")"
+			s2 += "(↑ " + main.queue_table[f][def.BtnUp].addr[12:15] + ")"
 		} else {
 			fmt.Printf(" ")
 		}
-		if remote.isOrder(f, def.BtnDown) {
+		if main.isOrder(f, def.BtnDown) {
 			fmt.Printf("↓")
-			s2 += "(↓ " + remote.matrix[f][def.BtnDown].addr[12:15] + ")"
+			s2 += "(↓ " + main.queue_table[f][def.BtnDown].addr[12:15] + ")"
 		} else {
 			fmt.Printf(" ")
 		}
@@ -137,8 +137,8 @@ func updateLocalQueue() {
 		<-updateLocal
 		for f := 0; f < def.N_Floors; f++ {
 			for b := 0; b < def.N_Buttons; b++ {
-				if remote.isOrder(f, b) {
-					if b != def.BtnInside && remote.matrix[f][b].addr == def.Laddr {
+				if main.isOrder(f, b) {
+					if b != def.BtnInside && main.queue_table[f][b].addr == def.Laddr {
 						if !local.isOrder(f, b) {
 							local.setOrder(f, b, Status{true, "", nil})
 							newOrder <- true
