@@ -17,11 +17,9 @@ var floor int
 var dir int
 
 type Channels struct {
-	// Events
 	NewOrder     chan bool
 	FloorReached chan int
 	doorTimeout  chan bool
-	// Hardware interaction
 	MotorDir  chan int
 	FloorLamp chan int
 	DoorLamp  chan bool
