@@ -1,15 +1,3 @@
-// Package fsm implements a finite state machine for the behaviour of a lift.
-// The lift runs based on a queue stored and managed by the queue package.
-//
-// There are three states:
-// Idle: Lift is stationary, at a floor, door closed, awaiting orders.
-// Moving: Lift is moving, can be between floors or at a floor going past it.
-// Door open: Lift is at a floor with the door open.
-//
-// And three events:
-// New order: A new order is added to the queue.
-// Floor reached: The lift reaches a floor.
-// Door timeout: The door timer times out (the door should close).
 package fsm
 
 import (
@@ -37,9 +25,7 @@ type Channels struct {
 	MotorDir  chan int
 	FloorLamp chan int
 	DoorLamp  chan bool
-	// Door timer
 	doorTimerReset chan bool
-	// Network interaction
 	OutgoingMsg chan def.Message
 }
 
@@ -47,7 +33,6 @@ func Init(ch Channels, startFloor int) {
 	state = idle
 	dir = def.DirStop
 	floor = startFloor
-
 	ch.doorTimeout = make(chan bool)
 	ch.doorTimerReset = make(chan bool)
 
