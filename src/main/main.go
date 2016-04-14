@@ -12,7 +12,7 @@ import (
 	"queue"
 	"time"
 )
-
+//hell yeahhh
 var onlineLifts = make(map[string]network.UdpConnection)
 var numOnline int
 
