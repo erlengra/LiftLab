@@ -29,8 +29,6 @@ func Init(outgoingMsg, incomingMsg chan def.Message) {
 	log.Println(def.ColG, "Network initialised.", def.ColN)
 }
 
-// aliveSpammer periodically sends messages on the network to notify all
-// lifts that this lift is still online ("alive").
 func aliveSpammer(outgoingMsg chan<- def.Message) {
 	const spamInterval = 400 * time.Millisecond
 	alive := def.Message{Category: def.Alive, Floor: -1, Button: -1, Cost: -1}
@@ -40,13 +38,9 @@ func aliveSpammer(outgoingMsg chan<- def.Message) {
 	}
 }
 
-// forwardOutgoing continuosly checks for messages to be sent on the network
-// by reading the OutgoingMsg channel. Each message read is sent to the udp file
-// as JSON.
 func forwardOutgoing(outgoingMsg <-chan def.Message, udpSend chan<- udpMessage) {
 	for {
 		msg := <-outgoingMsg
-
 		jsonMsg, err := json.Marshal(msg)
 		if err != nil {
 			log.Printf("%sjson.Marshal error: %v\n%s", def.ColR, err, def.ColN)
@@ -60,11 +54,9 @@ func forwardIncoming(incomingMsg chan<- def.Message, udpReceive <-chan udpMessag
 	for {
 		udpMessage := <-udpReceive
 		var message def.Message
-
 		if err := json.Unmarshal(udpMessage.data[:udpMessage.length], &message); err != nil {
 			fmt.Printf("json.Unmarshal error: %s\n", err)
 		}
-
 		message.Addr = udpMessage.raddr
 		incomingMsg <- message
 	}
