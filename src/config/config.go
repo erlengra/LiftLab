@@ -2,33 +2,44 @@ package config
 
 import (
 	"os/exec"
+	"os"
+	"fmt"
+	"time"
 )
 
-// Global system constants
 const N_Buttons = 3
 const N_Floors = 4
-
+const MOTOR_SPEED = 2800
+const MessageSize = 1024
+const LocalListenPort = 37103
+const BroadcastListenPort = 37104
+const NetworkTimeoutPeriod = 2 * time.Second
 const (
 	BtnUp int = iota
 	BtnDown
 	BtnInside
 )
-
 const (
 	DirDown int = iota - 1
 	DirStop
 	DirUp
 )
+const (
+	Alive int = iota + 1
+	NewOrder
+	CompleteOrder
+	Cost
+)
 
-// Local IP address
 var Laddr string
+var SyncLightsChan = make(chan bool)
+var CloseConnectionChan = make(chan bool)
 
 type Keypress struct {
 	Button int
 	Floor  int
 }
 
-// Generic network message. No other messages are ever sent on the network.
 type Message struct {
 	Category int
 	Floor    int
@@ -37,27 +48,25 @@ type Message struct {
 	Addr     string `json:"-"`
 }
 
-// Network message category constants
-const (
-	Alive int = iota + 1
-	NewOrder
-	CompleteOrder
-	Cost
-)
+type UdpConnection struct {
+	Addr  string
+	Timer *time.Timer
+}
 
-var SyncLightsChan = make(chan bool)
-var CloseConnectionChan = make(chan bool)
+type SystemChannels struct {
+	NewOrder     chan bool
+	FloorReached chan int
+	DoorTimeout  chan bool
+	DoorTimerReset chan bool
+	OutgoingMsg chan Message
+	IncomingMsg chan Message
+	CostChan chan Message
+	QueueNetworkComm chan string
+}
 
-// Start a new terminal when restart.Run()
-var Restart = exec.Command("gnome-terminal", "-x", "sh", "-c", "main")
-
-// Colours for printing to console
-const Col0 = "\x1b[30;1m" // Dark grey
-const ColR = "\x1b[31;1m" // Red
-const ColG = "\x1b[32;1m" // Green
-const ColY = "\x1b[33;1m" // Yellow
-const ColB = "\x1b[34;1m" // Blue
-const ColM = "\x1b[35;1m" // Magenta
-const ColC = "\x1b[36;1m" // Cyan
-const ColW = "\x1b[37;1m" // White
-const ColN = "\x1b[0m"    // Grey (neutral)
+func CheckError(err error) {
+    if err  != nil {
+        fmt.Println("Error: " , err)
+        os.Exit(0)
+    }
+}
