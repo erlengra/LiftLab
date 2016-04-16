@@ -1,27 +1,27 @@
 package queue
 
 import (
-	def "config"
+	"../config"
 	"encoding/json"
 	"io/ioutil"
 	"log"
 	"os"
 )
 
-func runBackup(outgoingMsg chan<- def.Message) {
-	const filename = "lift_backup"
-
+func Backup(networkPackage chan<- config.Message) {
+	const filename = "backup"
 	var backup queue
-	backup.loadFromDisk(filename)
+	backup.load(filename)
 
-	if !backup.isEmpty() {
-		for f := 0; f < def.N_Floors; f++ {
-			for b := 0; b < def.N_Buttons; b++ {
-				if backup.isOrder(f, b) {
-					if b == def.BtnInside {
-						SetOrderLocal(f, b)
+	if !backup.requestOrderInfo(-1, -1, isEmpty) {
+		log.Println("Backup not empty")
+		for f := 0; f < config.N_Floors; f++ {
+			for b := 0; b < config.N_Buttons; b++ {
+				if backup.requestOrderInfo(f, b, isInQueue) {
+					if b == config.BtnInside {
+						AddToLocalQueue(f, b)
 					} else {
-						outgoingMsg <- def.Message{Category: def.NewOrder, Floor: f, Button: b}
+						networkPackage <- config.Message{Category: config.NewOrder, Floor: f, Button: b}
 					}
 				}
 			}
@@ -30,37 +30,38 @@ func runBackup(outgoingMsg chan<- def.Message) {
 	go func() {
 		for {
 			<-takeBackup
-			if err := local.saveToDisk(filename); err != nil {
-				log.Println(def.ColR, err, def.ColN)
+			if err := local.Save(filename); err != nil {
+				log.Println(err)
 			}
 		}
 	}()
 }
 
-func (q *queue) saveToDisk(filename string) error {
-
+func (q *queue) save(filename string) error {
 	data, err := json.Marshal(&q)
 	if err != nil {
-		log.Println(def.ColR, "json.Marshal() error: Failed to backup.", def.ColN)
 		return err
 	}
-	if err := ioutil.WriteFile(filename, data, 0644); err != nil {
-		log.Println(def.ColR, "ioutil.WriteFile() error: Failed to backup.", def.ColN)
+	err := ioutil.WriteFile(filename, data, 0644)
+	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (q *queue) loadFromDisk(filename string) error {
-	if _, err := os.Stat(filename); err == nil {
-		log.Println(def.ColG, "Backup file found, processing...", def.ColN)
+func (q *queue) load(filename string) error {
+	log.Println("looking for backup...")
+	err := os.Stat(filename)
+	if err == nil {
+		log.Println("Backup file found")
 
 		data, err := ioutil.ReadFile(filename)
 		if err != nil {
-			log.Println(def.ColR, "loadFromDisk() error: Failed to read file.", def.ColN)
+			log.Println("\x1b[31;1m","load error","\x1b[0m")
 		}
-		if err := json.Unmarshal(data, q); err != nil {
-			log.Println(def.ColR, "loadFromDisk() error: Failed to Unmarshal.", def.ColN)
+		err := json.Unmarshal(data, q)
+		if err != nil {
+			log.Println("\x1b[31;1m","load error","\x1b[0m")
 		}
 	}
 	return nil
